@@ -185,10 +185,6 @@ try:
         
         # 更新布局
         fig_brand_total.update_layout(
-            title=dict(
-                text='品牌月度总销量及同比增长率',
-                font=dict(size=20)  # 增大标题字体
-            ),
             barmode='stack',
             yaxis=dict(
                 title='销量',
