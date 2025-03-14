@@ -192,171 +192,143 @@ try:
     # 3. 品牌对比分析
     st.header("3️⃣ 品牌对比分析")
     
-    # 选择要对比的品牌
-    col5, col6 = st.columns(2)
-    with col5:
-        compare_brand1 = st.selectbox('选择品牌1', brands, index=0)
-    with col6:
-        # 确保品牌2的默认选项不与品牌1相同
-        other_brands = [b for b in brands if b != compare_brand1]
-        compare_brand2 = st.selectbox('选择品牌2', other_brands, index=0)
-    
-    # 获取选中品牌的数据
-    brand1_data = df[df['品牌'] == compare_brand1].groupby('日期')['销量'].sum().reset_index()
-    brand2_data = df[df['品牌'] == compare_brand2].groupby('日期')['销量'].sum().reset_index()
-    
-    # 计算同比增长率
-    for brand_data in [brand1_data, brand2_data]:
-        brand_data['去年同期'] = brand_data['销量'].shift(12)
-        brand_data['同比增长率'] = (brand_data['销量'] - brand_data['去年同期']) / brand_data['去年同期'] * 100
-    
-    col7, col8 = st.columns(2)
-    
-    with col7:
-        # 创建销量对比图
-        fig_compare = go.Figure()
-        
-        # 添加品牌1的柱状图
-        fig_compare.add_trace(
-            go.Bar(
-                name=compare_brand1,
-                x=brand1_data['日期'],
-                y=brand1_data['销量'],
-                text=brand1_data['销量'].round(0),
-                textposition='auto',
-                offsetgroup=0
-            )
-        )
-        
-        # 添加品牌2的柱状图
-        fig_compare.add_trace(
-            go.Bar(
-                name=compare_brand2,
-                x=brand2_data['日期'],
-                y=brand2_data['销量'],
-                text=brand2_data['销量'].round(0),
-                textposition='auto',
-                offsetgroup=1
-            )
-        )
-        
-        # 更新布局
-        fig_compare.update_layout(
-            title=f'{compare_brand1} vs {compare_brand2} 销量对比',
-            barmode='group',
-            yaxis_title='销量',
-            xaxis_title='时间',
-            showlegend=True,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            hovermode='x unified'
-        )
-        
-        st.plotly_chart(fig_compare, use_container_width=True)
-    
-    with col8:
-        # 创建增长率对比图
-        fig_growth = go.Figure()
-        
-        # 添加品牌1的增长率线
-        fig_growth.add_trace(
-            go.Scatter(
-                name=f'{compare_brand1}增长率',
-                x=brand1_data['日期'],
-                y=brand1_data['同比增长率'],
-                mode='lines+markers',
-                line=dict(width=2),
-                marker=dict(size=8)
-            )
-        )
-        
-        # 添加品牌2的增长率线
-        fig_growth.add_trace(
-            go.Scatter(
-                name=f'{compare_brand2}增长率',
-                x=brand2_data['日期'],
-                y=brand2_data['同比增长率'],
-                mode='lines+markers',
-                line=dict(width=2),
-                marker=dict(size=8)
-            )
-        )
-        
-        # 添加0线
-        fig_growth.add_hline(
-            y=0, 
-            line_dash="dash", 
-            line_color="gray",
-            annotation_text="0%",
-            annotation_position="bottom right"
-        )
-        
-        # 更新布局
-        fig_growth.update_layout(
-            title=f'{compare_brand1} vs {compare_brand2} 同比增长率对比',
-            yaxis=dict(
-                title='同比增长率 (%)',
-                tickformat='.1f',
-                zeroline=True
-            ),
-            xaxis_title='时间',
-            showlegend=True,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            hovermode='x unified'
-        )
-        
-        st.plotly_chart(fig_growth, use_container_width=True)
-    
-    # 显示对比数据表格
-    st.subheader("品牌对比详细数据")
-    
-    # 合并两个品牌的数据
-    compare_data = pd.merge(
-        brand1_data.rename(columns={
-            '销量': f'{compare_brand1}销量',
-            '同比增长率': f'{compare_brand1}增长率'
-        })[['日期', f'{compare_brand1}销量', f'{compare_brand1}增长率']],
-        brand2_data.rename(columns={
-            '销量': f'{compare_brand2}销量',
-            '同比增长率': f'{compare_brand2}增长率'
-        })[['日期', f'{compare_brand2}销量', f'{compare_brand2}增长率']],
-        on='日期'
+    # 使用多选框选择要对比的品牌
+    selected_brands = st.multiselect(
+        '选择要对比的品牌（建议选择2-5个品牌）',
+        options=brands,
+        default=brands[:2]  # 默认选择前两个品牌
     )
     
-    # 计算市场份额
-    total_sales = df.groupby('日期')['销量'].sum().reset_index()
-    compare_data = pd.merge(compare_data, total_sales, on='日期')
-    compare_data[f'{compare_brand1}份额'] = compare_data[f'{compare_brand1}销量'] / compare_data['销量'] * 100
-    compare_data[f'{compare_brand2}份额'] = compare_data[f'{compare_brand2}销量'] / compare_data['销量'] * 100
-    
-    # 格式化数据
-    formatted_compare = compare_data.copy()
-    for brand in [compare_brand1, compare_brand2]:
-        formatted_compare[f'{brand}销量'] = formatted_compare[f'{brand}销量'].map(lambda x: f"{x:,.0f}")
-        formatted_compare[f'{brand}增长率'] = formatted_compare[f'{brand}增长率'].map(lambda x: f"{x:,.1f}%" if pd.notnull(x) else "N/A")
-        formatted_compare[f'{brand}份额'] = formatted_compare[f'{brand}份额'].map(lambda x: f"{x:.1f}%" if pd.notnull(x) else "N/A")
-    
-    # 显示数据表格
-    st.dataframe(
-        formatted_compare[[
-            '日期',
-            f'{compare_brand1}销量', f'{compare_brand1}增长率', f'{compare_brand1}份额',
-            f'{compare_brand2}销量', f'{compare_brand2}增长率', f'{compare_brand2}份额'
-        ]].sort_values('日期', ascending=False).set_index('日期'),
-        use_container_width=True,
-        height=400
-    )
+    if len(selected_brands) < 2:
+        st.warning('请至少选择两个品牌进行对比')
+    else:
+        # 获取所有选中品牌的数据
+        compare_data = []
+        for brand in selected_brands:
+            brand_data = df[df['品牌'] == brand].groupby('日期')['销量'].sum().reset_index()
+            brand_data['品牌'] = brand
+            brand_data['去年同期'] = brand_data['销量'].shift(12)
+            brand_data['同比增长率'] = (brand_data['销量'] - brand_data['去年同期']) / brand_data['去年同期'] * 100
+            compare_data.append(brand_data)
+        
+        # 合并所有品牌数据
+        all_compare_data = pd.concat(compare_data)
+        
+        col7, col8 = st.columns(2)
+        
+        with col7:
+            # 创建销量对比图
+            fig_compare = go.Figure()
+            
+            # 为每个品牌添加柱状图
+            for i, brand in enumerate(selected_brands):
+                brand_data = all_compare_data[all_compare_data['品牌'] == brand]
+                fig_compare.add_trace(
+                    go.Bar(
+                        name=brand,
+                        x=brand_data['日期'],
+                        y=brand_data['销量'],
+                        text=brand_data['销量'].round(0),
+                        textposition='auto',
+                        offsetgroup=i
+                    )
+                )
+            
+            # 更新布局
+            fig_compare.update_layout(
+                title='品牌销量对比',
+                barmode='group',
+                yaxis_title='销量',
+                xaxis_title='时间',
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                ),
+                hovermode='x unified'
+            )
+            
+            st.plotly_chart(fig_compare, use_container_width=True)
+        
+        with col8:
+            # 创建增长率对比图
+            fig_growth = go.Figure()
+            
+            # 添加0%基准线
+            fig_growth.add_hline(
+                y=0, 
+                line_dash="dash", 
+                line_color="gray",
+                annotation_text="0%",
+                annotation_position="left"
+            )
+            
+            # 为每个品牌添加增长率折线
+            for brand in selected_brands:
+                brand_data = all_compare_data[all_compare_data['品牌'] == brand]
+                fig_growth.add_trace(
+                    go.Scatter(
+                        name=brand,
+                        x=brand_data['日期'],
+                        y=brand_data['同比增长率'],
+                        mode='lines+markers',
+                        line=dict(width=2),
+                        marker=dict(size=8)
+                    )
+                )
+            
+            # 更新布局
+            fig_growth.update_layout(
+                title='品牌同比增长率对比',
+                yaxis_title='同比增长率 (%)',
+                xaxis_title='时间',
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                ),
+                hovermode='x unified'
+            )
+            
+            # 设置y轴格式
+            fig_growth.update_yaxes(tickformat='.1f')
+            
+            st.plotly_chart(fig_growth, use_container_width=True)
+        
+        # 创建详细数据表格
+        st.subheader("详细对比数据")
+        
+        # 数据透视表
+        compare_table = all_compare_data.pivot_table(
+            index=['日期'],
+            columns=['品牌'],
+            values=['销量', '同比增长率'],
+            aggfunc={'销量': 'sum', '同比增长率': 'first'}
+        ).round(1)
+        
+        # 重新排序列以使销量和增长率交替显示
+        new_columns = []
+        for brand in selected_brands:
+            new_columns.extend([('销量', brand), ('同比增长率', brand)])
+        compare_table = compare_table[new_columns]
+        
+        # 格式化数据显示
+        formatted_compare_table = compare_table.copy()
+        for brand in selected_brands:
+            formatted_compare_table[('销量', brand)] = formatted_compare_table[('销量', brand)].map(lambda x: f"{x:,.0f}" if pd.notnull(x) else "")
+            formatted_compare_table[('同比增长率', brand)] = formatted_compare_table[('同比增长率', brand)].map(lambda x: f"{x:.1f}%" if pd.notnull(x) else "")
+        
+        st.dataframe(
+            formatted_compare_table.sort_index(ascending=False),
+            use_container_width=True,
+            height=400
+        )
 
 except Exception as e:
     st.error(f"加载数据时出错: {str(e)}")
