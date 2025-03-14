@@ -11,8 +11,47 @@ st.set_page_config(
     layout="wide"
 )
 
+# 自定义CSS样式
+st.markdown("""
+<style>
+    .main {
+        padding: 0rem 1rem;
+    }
+    .title-text {
+        font-size: 42px !important;
+        font-weight: bold;
+        color: #1E88E5;
+        padding: 0.5rem 0rem 2rem 0rem;
+    }
+    .header-text {
+        font-size: 28px !important;
+        font-weight: bold;
+        color: #2E7D32;
+        padding: 1rem 0rem;
+    }
+    .subheader-text {
+        font-size: 24px !important;
+        font-weight: bold;
+        color: #424242;
+        padding: 0.5rem 0rem;
+    }
+    .streamlit-expanderHeader {
+        font-size: 18px !important;
+        font-weight: bold;
+    }
+    div[data-testid="stSelectbox"] label {
+        font-size: 18px !important;
+        color: #424242;
+    }
+    div[data-testid="stMultiSelect"] label {
+        font-size: 18px !important;
+        color: #424242;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # 设置页面标题
-st.title("🚗 汽车销量数据分析")
+st.markdown('<p class="title-text">🚗 汽车销量数据分析</p>', unsafe_allow_html=True)
 
 # 读取数据
 @st.cache_data
@@ -43,7 +82,7 @@ try:
     df = load_data()
 
     # 1. 单品牌车型销量分析
-    st.header("1️⃣ 单品牌车型销量分析")
+    st.markdown('<p class="header-text">1️⃣ 单品牌车型销量分析</p>', unsafe_allow_html=True)
     
     # 选择品牌
     brands = sorted(df['品牌'].unique())
@@ -96,32 +135,38 @@ try:
         )
 
     # 2. 品牌总销量分析
-    st.header("2️⃣ 品牌总销量分析")
+    st.markdown('<p class="header-text">2️⃣ 品牌总销量分析</p>', unsafe_allow_html=True)
+    
+    # 添加品牌选择多选框
+    selected_brands_total = st.multiselect(
+        '选择要分析的品牌',
+        options=brands,
+        default=brands  # 默认选择所有品牌
+    )
     
     col3, col4 = st.columns(2)
     
     with col3:
-        # 计算所有品牌的月度总销量
-        brand_total = df.groupby(['日期', '品牌'])['销量'].sum().reset_index()
+        # 计算所选品牌的月度总销量
+        brand_total = df[df['品牌'].isin(selected_brands_total)].groupby(['日期', '品牌'])['销量'].sum().reset_index()
         
-        # 计算每个月的总销量和去年同期销量
+        # 计算所选品牌每个月的总销量和去年同期销量
         monthly_sum = brand_total.groupby('日期')['销量'].sum().reset_index()
         monthly_sum['去年同期'] = monthly_sum['销量'].shift(12)
         monthly_sum['同比增长率'] = (monthly_sum['销量'] - monthly_sum['去年同期']) / monthly_sum['去年同期'] * 100
         
-        # 创建堆叠柱状图和增长率折线图
+        # 创建堆叠柱状图
         fig_brand_total = go.Figure()
         
         # 添加每个品牌的堆叠柱状图
-        for brand in brands:
+        for brand in selected_brands_total:
             brand_data = brand_total[brand_total['品牌'] == brand]
             fig_brand_total.add_trace(
                 go.Bar(
                     name=brand,
                     x=brand_data['日期'],
                     y=brand_data['销量'],
-                    text=brand_data['销量'].round(0),
-                    textposition='inside',
+                    showlegend=True
                 )
             )
         
@@ -132,35 +177,50 @@ try:
                 x=monthly_sum['日期'],
                 y=monthly_sum['同比增长率'],
                 yaxis='y2',
-                line=dict(color='red', width=2),
-                mode='lines+markers'
+                line=dict(color='#E53935', width=2.5),  # 加粗红色线条
+                mode='lines+markers',
+                marker=dict(size=8)
             )
         )
         
         # 更新布局
         fig_brand_total.update_layout(
-            title='品牌月度总销量及同比增长率',
+            title=dict(
+                text='品牌月度总销量及同比增长率',
+                font=dict(size=20)  # 增大标题字体
+            ),
             barmode='stack',
             yaxis=dict(
                 title='销量',
-                side='left'
+                side='left',
+                titlefont=dict(size=16),  # 增大轴标题字体
+                tickfont=dict(size=14)    # 增大刻度字体
             ),
             yaxis2=dict(
                 title='同比增长率 (%)',
                 side='right',
                 overlaying='y',
-                tickformat='.1f'
+                tickformat='.1f',
+                titlefont=dict(size=16),
+                tickfont=dict(size=14)
             ),
-            xaxis_title='时间',
+            xaxis=dict(
+                title='时间',
+                titlefont=dict(size=16),
+                tickfont=dict(size=14)
+            ),
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
                 y=1.02,
                 xanchor="right",
-                x=1
+                x=1,
+                font=dict(size=14)  # 增大图例字体
             ),
-            hovermode='x unified'
+            hovermode='x unified',
+            plot_bgcolor='white',  # 设置白色背景
+            paper_bgcolor='white'
         )
         
         # 设置y轴从0开始
@@ -190,7 +250,7 @@ try:
         )
 
     # 3. 品牌对比分析
-    st.header("3️⃣ 品牌对比分析")
+    st.markdown('<p class="header-text">3️⃣ 品牌对比分析</p>', unsafe_allow_html=True)
     
     # 使用多选框选择要对比的品牌
     selected_brands = st.multiselect(
@@ -302,7 +362,7 @@ try:
             st.plotly_chart(fig_growth, use_container_width=True)
         
         # 创建详细数据表格
-        st.subheader("详细对比数据")
+        st.markdown('<p class="subheader-text">详细对比数据</p>', unsafe_allow_html=True)
         
         # 数据透视表
         compare_table = all_compare_data.pivot_table(
@@ -332,4 +392,4 @@ try:
 
 except Exception as e:
     st.error(f"加载数据时出错: {str(e)}")
-    st.info("请确保'汽车销量数据.xlsx'文件在正确的位置。") 
+    st.info("请确保'汽车销量数据.xlsx'文件在正确的位置。")  
