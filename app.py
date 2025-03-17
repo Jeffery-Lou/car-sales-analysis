@@ -47,6 +47,17 @@ st.markdown("""
         font-size: 18px !important;
         color: #424242;
     }
+    /* 添加表格样式 */
+    div[data-testid="stDataFrame"] {
+        font-size: 16px !important;
+    }
+    div[data-testid="stDataFrame"] td {
+        font-size: 16px !important;
+    }
+    div[data-testid="stDataFrame"] th {
+        font-size: 16px !important;
+        font-weight: bold !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
