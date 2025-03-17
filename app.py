@@ -56,7 +56,7 @@ st.markdown('<p class="title-text">🚗 汽车销量数据分析</p>', unsafe_al
 # 读取数据
 @st.cache_data
 def load_data():
-    # 读取Excel文件
+    # 读取月度Excel文件
     df = pd.read_excel("汽车销量数据.xlsx")
     
     # 将宽表格转换为长表格，保留汽车品牌和车型列
@@ -75,11 +75,33 @@ def load_data():
     # 将销量中的空值替换为0
     df_melted['销量'] = df_melted['销量'].fillna(0)
     
-    return df_melted[['日期', '品牌', '车型', '销量']]
+    # 读取周度Excel文件
+    df_weekly_raw = pd.read_excel("汽车销量数据_autohome_周度.xlsx")
+    
+    # 将周度数据转换为长格式
+    df_weekly = df_weekly_raw.melt(
+        id_vars=['汽车品牌', '车型', '售价'],  # 保持不变的列
+        var_name='日期',                    # 日期列名
+        value_name='销量'                   # 销量列名
+    )
+    
+    # 将日期列转换为datetime类型
+    df_weekly['日期'] = pd.to_datetime(df_weekly['日期'])
+    
+    # 添加周数列
+    df_weekly['周数'] = df_weekly['日期'].dt.isocalendar().week
+    
+    # 重命名列
+    df_weekly = df_weekly.rename(columns={'汽车品牌': '品牌'})
+    
+    # 将销量中的空值替换为0
+    df_weekly['销量'] = df_weekly['销量'].fillna(0)
+    
+    return df_melted[['日期', '品牌', '车型', '销量']], df_weekly[['日期', '品牌', '车型', '售价', '周数', '销量']]
 
 # 加载数据
 try:
-    df = load_data()
+    df, df_weekly = load_data()
 
     # 1. 单品牌车型销量分析
     st.markdown('<p class="header-text">1️⃣ 单品牌车型销量分析</p>', unsafe_allow_html=True)
@@ -386,6 +408,93 @@ try:
             height=400
         )
 
+    # 4. 周度数据分析
+    st.markdown('<p class="header-text">4️⃣ 周度数据分析</p>', unsafe_allow_html=True)
+    
+    # 创建品牌选择器
+    weekly_brands = sorted(df_weekly['品牌'].unique())
+    selected_brand_models = st.selectbox(
+        '选择品牌查看车型销量',
+        options=weekly_brands,
+        key='weekly_brand_models'
+    )
+    
+    # 创建两列布局
+    col_weekly1, col_weekly2 = st.columns(2)
+    
+    with col_weekly1:
+        # 过滤选定品牌的车型数据
+        model_data = df_weekly[df_weekly['品牌'] == selected_brand_models]
+        
+        # 创建车型销量趋势图
+        fig_models = px.line(
+            model_data,
+            x='日期',
+            y='销量',
+            color='车型',
+            title=f'{selected_brand_models}各车型周度销量趋势',
+            labels={'日期': '日期', '销量': '周度销量'}
+        )
+        
+        # 添加数据标签和调整布局
+        fig_models.update_traces(mode='lines+markers')
+        fig_models.update_layout(
+            xaxis_title='日期',
+            yaxis_title='销量',
+            hovermode='x unified',
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
+        )
+        
+        st.plotly_chart(fig_models, use_container_width=True)
+    
+    with col_weekly2:
+        # 计算车型占比
+        model_shares = model_data.groupby('车型')['销量'].sum()
+        total_sales = model_shares.sum()
+        model_shares = (model_shares / total_sales * 100).round(1)
+        
+        # 创建占比饼图
+        fig_shares = px.pie(
+            values=model_shares.values,
+            names=model_shares.index,
+            title=f'{selected_brand_models}车型销量占比分析'
+        )
+        
+        # 更新布局
+        fig_shares.update_traces(textposition='inside', textinfo='percent+label')
+        fig_shares.update_layout(showlegend=False)
+        
+        st.plotly_chart(fig_shares, use_container_width=True)
+        
+    # 显示详细数据表格
+    st.markdown('<p class="subheader-text">车型销量明细</p>', unsafe_allow_html=True)
+    
+    # 创建数据透视表
+    model_pivot = model_data.pivot_table(
+        index='车型',
+        columns='日期',
+        values='销量',
+        aggfunc='sum'
+    ).round(0)
+    
+    # 添加合计行
+    model_pivot.loc['合计'] = model_pivot.sum()
+    
+    # 格式化数字显示
+    formatted_model_pivot = model_pivot.map(lambda x: f"{x:,.0f}" if pd.notnull(x) else "")
+    
+    st.dataframe(
+        formatted_model_pivot,
+        use_container_width=True,
+        height=400
+    )
+
 except Exception as e:
-    st.error(f"加载数据时出错: {str(e)}")
+    st.error(f"数据加载或处理过程中出现错误：{str(e)}")
     st.info("请确保'汽车销量数据.xlsx'文件在正确的位置。")  
