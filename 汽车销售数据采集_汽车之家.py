@@ -21,8 +21,7 @@ brandid = {
     '华为': '509',
     '宝马': '15',
     '奔驰': '36',
-    '奥迪': '33',
-    '阿维塔': '502'
+    '奥迪': '33'
 }
 
 def get_sales_data(brand_id, date, retry_count=3):

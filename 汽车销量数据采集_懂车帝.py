@@ -1,4 +1,3 @@
-# %%
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
@@ -59,7 +58,6 @@ brand_id = {'小鹏': '195',
             '极氪': '426',
             '奇瑞': '18',
             '埃安': '242',
-            '阿维塔': '475',
             'AITO': '483',
             '宝马': '4',
             '奔驰': '3',
@@ -149,8 +147,3 @@ sorted_columns = fixed_columns + sorted_month_columns
 all_brands_data = all_brands_data[sorted_columns]
 
 all_brands_data.to_excel('汽车销量数据.xlsx', index=False)
-
-# %%
-
-
-
