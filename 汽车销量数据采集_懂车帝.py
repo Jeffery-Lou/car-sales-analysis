@@ -119,9 +119,9 @@ for brand_name, brand_id_value in brand_id.items():
 # 处理缺失值，将缺失的销量数据填充为0
 all_brands_data = all_brands_data.fillna(0)
 
-# 如果同文件夹下已经有这个excel文件，读取文件在基础上更新数据
-if os.path.exists('汽车销量数据.xlsx'):
-    old_data = pd.read_excel('汽车销量数据.xlsx')
+# 如果同文件夹下已经有这个CSV文件，读取文件在基础上更新数据
+if os.path.exists('汽车销量数据.csv'):
+    old_data = pd.read_csv('汽车销量数据.csv', encoding='utf-8-sig')
     # 合并新旧数据，根据汽车品牌、车型、售价进行合并
     merged_data = pd.merge(old_data, all_brands_data, on=['汽车品牌', '车型', '售价'], how='outer')
     # 找出新旧数据中相同月份的列
@@ -146,4 +146,5 @@ sorted_columns = fixed_columns + sorted_month_columns
 # 按排序后的列重新排列 DataFrame
 all_brands_data = all_brands_data[sorted_columns]
 
-all_brands_data.to_excel('汽车销量数据.xlsx', index=False)
+# 保存为CSV文件，使用UTF-8编码
+all_brands_data.to_csv('汽车销量数据.csv', index=False, encoding='utf-8-sig')
