@@ -67,8 +67,8 @@ st.markdown('<p class="title-text">🚗 汽车销量数据分析</p>', unsafe_al
 # 读取数据
 @st.cache_data
 def load_data():
-    # 读取月度Excel文件
-    df = pd.read_excel("汽车销量数据.xlsx")
+    # 读取月度CSV文件
+    df = pd.read_csv("汽车销量数据.csv")
     
     # 将宽表格转换为长表格，保留汽车品牌和车型列
     df_melted = df.melt(
@@ -86,8 +86,8 @@ def load_data():
     # 将销量中的空值替换为0
     df_melted['销量'] = df_melted['销量'].fillna(0)
     
-    # 读取周度Excel文件
-    df_weekly_raw = pd.read_excel("汽车销量数据_autohome_周度.xlsx")
+    # 读取周度CSV文件
+    df_weekly_raw = pd.read_csv("汽车销量数据_autohome_周度.csv")
     
     # 将周度数据转换为长格式
     df_weekly = df_weekly_raw.melt(
@@ -508,4 +508,4 @@ try:
 
 except Exception as e:
     st.error(f"数据加载或处理过程中出现错误：{str(e)}")
-    st.info("请确保'汽车销量数据.xlsx'文件在正确的位置。")  
+    st.info("请确保'汽车销量数据.csv'文件在正确的位置。")  
