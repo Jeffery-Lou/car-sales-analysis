@@ -6,3 +6,7 @@ streamlit==1.31.1
 plotly==5.19.0
 openpyxl==3.1.2
 altair==4.2.2
+tqdm>=4.66.0
+
+# 数据处理相关
+numpy>=1.24.0
