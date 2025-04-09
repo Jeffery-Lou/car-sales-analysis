@@ -35,7 +35,9 @@ jobs:
     
     - name: Run data collection scripts
       run: |
-        python scripts/run_collection.py
+        cd scripts
+        python run_collection.py
+        mv 汽车销量数据*.csv ../
       env:
         PYTHONPATH: ${{ github.workspace }}
       continue-on-error: true
