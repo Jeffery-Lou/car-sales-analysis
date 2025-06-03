@@ -3,7 +3,7 @@ name: Weekly Data Collection
 on:
   schedule:
     # 每周三上午11点运行 (UTC+8)
-    - cron: '0 3 * * 3'  # UTC时间，对应北京时间11点
+    - cron: '0 7 * * 2'  # UTC时间，对应北京时间11点
   workflow_dispatch:  # 允许手动触发
 
 # 添加工作流权限
